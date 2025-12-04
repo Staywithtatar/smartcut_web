@@ -1,0 +1,240 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    /* Electric Future Color Palette */
+    --primary-blue: 60 100 255;
+    /* Electric Blue */
+    --primary-purple: 200 50 255;
+    /* Neon Purple */
+    --accent-mint: 0 255 180;
+    /* Cyber Mint */
+    --accent-pink: 255 0 128;
+    /* Hot Pink */
+
+    --midnight: 10 10 20;
+    /* Deep Midnight Blue */
+    --midnight-light: 20 20 35;
+    --midnight-lighter: 30 30 50;
+
+    /* Legacy Variable Mapping (for compatibility) */
+    --purple: 60 100 255;
+    /* Mapped to Blue */
+    --gold: 200 50 255;
+    /* Mapped to Purple */
+    --charcoal: 10 10 20;
+    /* Mapped to Midnight */
+    --charcoal-light: 20 20 35;
+    --charcoal-lighter: 30 30 50;
+
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, rgb(60, 100, 255) 0%, rgb(200, 50, 255) 100%);
+    --gradient-electric: linear-gradient(135deg, rgb(0, 255, 180) 0%, rgb(60, 100, 255) 100%);
+    --gradient-dark: linear-gradient(180deg, rgb(10, 10, 20) 0%, rgb(20, 20, 35) 100%);
+    --gradient-mesh: radial-gradient(at 0% 0%, rgba(60, 100, 255, 0.25) 0%, transparent 50%),
+      radial-gradient(at 100% 100%, rgba(200, 50, 255, 0.25) 0%, transparent 50%);
+
+    /* Shadcn UI Variables (Dark Theme) */
+    --background: 10 10 20;
+    --foreground: 0 0% 98%;
+    --card: 20 20 35;
+    --card-foreground: 0 0% 98%;
+    --popover: 20 20 35;
+    --popover-foreground: 0 0% 98%;
+    --primary: 60 100 255;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 200 50 255;
+    --secondary-foreground: 255 255 255;
+    --muted: 30 30 50;
+    --muted-foreground: 215 202 255;
+    --accent: 0 255 180;
+    --accent-foreground: 10 10 20;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 30 30 50;
+    --input: 30 30 50;
+    --ring: 60 100 255;
+    --radius: 0.75rem;
+  }
+}
+
+@layer base {
+  * {
+    border-color: hsl(var(--border));
+  }
+
+  body {
+    background-color: rgb(var(--midnight));
+    color: hsl(var(--foreground));
+    font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  }
+}
+
+@layer utilities {
+
+  /* Gradient Animations */
+  @keyframes gradient-shift {
+
+    0%,
+    100% {
+      background-position: 0% 50%;
+    }
+
+    50% {
+      background-position: 100% 50%;
+    }
+  }
+
+  @keyframes mesh-float {
+
+    0%,
+    100% {
+      transform: translate(0, 0) scale(1);
+    }
+
+    33% {
+      transform: translate(50px, -80px) scale(1.1);
+    }
+
+    66% {
+      transform: translate(-50px, 50px) scale(0.9);
+    }
+  }
+
+  @keyframes glow-pulse {
+
+    0%,
+    100% {
+      opacity: 1;
+      filter: blur(20px);
+    }
+
+    50% {
+      opacity: 0.8;
+      filter: blur(25px);
+    }
+  }
+
+  @keyframes neon-flicker {
+
+    0%,
+    100% {
+      opacity: 1;
+    }
+
+    50% {
+      opacity: 0.95;
+    }
+  }
+
+  /* Animated Gradient Background */
+  .animate-gradient {
+    background-size: 200% 200%;
+    animation: gradient-shift 8s ease infinite;
+  }
+
+  .animate-mesh {
+    animation: mesh-float 15s ease-in-out infinite;
+  }
+
+  .animate-glow {
+    animation: glow-pulse 3s ease-in-out infinite;
+  }
+
+  .animate-neon {
+    animation: neon-flicker 2s ease-in-out infinite;
+  }
+
+  .animation-delay-2000 {
+    animation-delay: 2s;
+  }
+
+  .animation-delay-4000 {
+    animation-delay: 4s;
+  }
+
+  .animation-delay-6000 {
+    animation-delay: 6s;
+  }
+
+  /* Glassmorphism 2.0 - Thinner, Cleaner */
+  .glass {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  }
+
+  .glass-strong {
+    background: rgba(30, 30, 50, 0.6);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  /* Neon Glow Effects - Electric Future */
+  .glow-blue {
+    box-shadow: 0 0 20px rgba(60, 100, 255, 0.4),
+      0 0 40px rgba(60, 100, 255, 0.2);
+  }
+
+  .glow-purple {
+    box-shadow: 0 0 20px rgba(200, 50, 255, 0.4),
+      0 0 40px rgba(200, 50, 255, 0.2);
+  }
+
+  .glow-mint {
+    box-shadow: 0 0 20px rgba(0, 255, 180, 0.4),
+      0 0 40px rgba(0, 255, 180, 0.2);
+  }
+
+  /* Soft Glows */
+  .glow-blue-soft {
+    box-shadow: 0 0 15px rgba(60, 100, 255, 0.2),
+      0 0 30px rgba(60, 100, 255, 0.1);
+  }
+
+  .glow-purple-soft {
+    box-shadow: 0 0 15px rgba(200, 50, 255, 0.2),
+      0 0 30px rgba(200, 50, 255, 0.1);
+  }
+
+  /* Hover Glows */
+  .hover-glow-blue:hover {
+    box-shadow: 0 0 25px rgba(60, 100, 255, 0.5),
+      0 0 50px rgba(60, 100, 255, 0.3);
+    transition: box-shadow 0.3s ease;
+  }
+
+  .hover-glow-purple:hover {
+    box-shadow: 0 0 25px rgba(200, 50, 255, 0.5),
+      0 0 50px rgba(200, 50, 255, 0.3);
+    transition: box-shadow 0.3s ease;
+  }
+
+  /* Gradient Text */
+  .text-gradient-electric {
+    background: linear-gradient(135deg, rgb(60, 100, 255) 0%, rgb(200, 50, 255) 50%, rgb(0, 255, 180) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .text-gradient-purple-gold {
+    /* Keeping class name for compatibility but updating colors */
+    background: linear-gradient(135deg, rgb(60, 100, 255) 0%, rgb(200, 50, 255) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Mesh Background */
+  .bg-mesh {
+    background:
+      radial-gradient(at 0% 0%, rgba(60, 100, 255, 0.15) 0%, transparent 50%),
+      radial-gradient(at 100% 100%, rgba(200, 50, 255, 0.15) 0%, transparent 50%),
+      radial-gradient(at 50% 50%, rgba(60, 100, 255, 0.05) 0%, transparent 50%),
+      rgb(var(--midnight));
+  }
+}
