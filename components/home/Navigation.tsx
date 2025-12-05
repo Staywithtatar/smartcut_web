@@ -2,14 +2,23 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Video } from 'lucide-react'
+import Image from 'next/image'
 import { Button } from '@/components/ui/Button'
 import { UserMenu } from '@/components/home/UserMenu'
+import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher'
+import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { createBrowserClient } from '@supabase/ssr'
 
+interface UserData {
+    email: string
+    avatarUrl?: string
+    name?: string
+}
+
 export function Navigation() {
-    const [user, setUser] = useState<{ email: string } | null>(null)
+    const [user, setUser] = useState<UserData | null>(null)
     const [loading, setLoading] = useState(true)
+    const { t } = useLanguage()
 
     useEffect(() => {
         const checkUser = async () => {
@@ -19,7 +28,16 @@ export function Navigation() {
                     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
                 )
                 const { data: { user } } = await supabase.auth.getUser()
-                setUser(user ? { email: user.email || '' } : null)
+
+                if (user) {
+                    setUser({
+                        email: user.email || '',
+                        avatarUrl: user.user_metadata?.avatar_url || user.user_metadata?.picture,
+                        name: user.user_metadata?.full_name || user.user_metadata?.name,
+                    })
+                } else {
+                    setUser(null)
+                }
             } catch (error) {
                 console.error('Error checking user:', error)
             } finally {
@@ -35,38 +53,49 @@ export function Navigation() {
                 <div className="flex items-center justify-between h-16">
                     {/* Logo */}
                     <Link href="/" className="flex items-center gap-2 group">
-                        <div className="w-10 h-10 bg-gradient-to-br from-[rgb(60,100,255)] to-[rgb(200,50,255)] rounded-xl flex items-center justify-center glow-blue-soft group-hover:glow-blue transition-all">
-                            <Video className="w-6 h-6 text-white" />
+                        <div className="w-15 h-15 rounded-xl overflow-hidden group-hover:scale-110 transition-transform">
+                            <Image
+                                src="/logo.png"
+                                alt="Hedcut"
+                                width={48}
+                                height={48}
+                                className="w-full h-full object-cover"
+                            />
                         </div>
-                        <span className="text-xl font-bold text-gradient-electric">
-                            AutoCut
-                        </span>
                     </Link>
 
-                    {/* Navigation Links */}
-                    <div className="hidden md:flex items-center gap-6">
-                        <Link href="#features" className="text-gray-300 hover:text-white transition-colors">
-                            ฟีเจอร์
+                    {/* Navigation Links - Centered */}
+                    <div className="hidden md:flex items-center gap-8 absolute left-1/2 -translate-x-1/2">
+                        <Link href="#features" className="text-gray-300 hover:text-white transition-colors font-medium">
+                            {t('nav.features')}
                         </Link>
-                        <Link href="#how-it-works" className="text-gray-300 hover:text-white transition-colors">
-                            วิธีใช้งาน
+                        <Link href="#how-it-works" className="text-gray-300 hover:text-white transition-colors font-medium">
+                            {t('nav.howItWorks')}
                         </Link>
-                        <Link href="/pricing" className="text-gray-300 hover:text-white transition-colors">
-                            ราคา
+                        <Link href="/pricing" className="text-gray-300 hover:text-white transition-colors font-medium">
+                            {t('nav.pricing')}
                         </Link>
                     </div>
 
                     {/* Auth Section */}
                     <div className="flex items-center gap-3">
+                        {/* Language Switcher */}
+                        <LanguageSwitcher />
+
                         {loading ? (
                             <div className="w-8 h-8 rounded-full bg-white/10 animate-pulse" />
                         ) : user ? (
-                            <UserMenu email={user.email} credits={5} />
+                            <UserMenu
+                                email={user.email}
+                                credits={5}
+                                avatarUrl={user.avatarUrl}
+                                name={user.name}
+                            />
                         ) : (
                             <>
                                 {/* Login Button */}
                                 <Button asChild variant="ghost" size="sm" className="text-gray-300 hover:text-white hover:bg-white/5">
-                                    <Link href="/login">เข้าสู่ระบบ</Link>
+                                    <Link href="/login">{t('nav.login')}</Link>
                                 </Button>
 
                                 {/* Signup Button */}
@@ -75,7 +104,7 @@ export function Navigation() {
                                     size="sm"
                                     className="bg-gradient-to-r from-[rgb(60,100,255)] to-[rgb(200,50,255)] hover:glow-blue text-white border-0 font-semibold"
                                 >
-                                    <Link href="/signup">สมัครสมาชิก</Link>
+                                    <Link href="/signup">{t('nav.signup')}</Link>
                                 </Button>
                             </>
                         )}

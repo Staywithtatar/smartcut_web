@@ -1,6 +1,6 @@
 'use client'
 
-import { Check, Sparkles } from 'lucide-react'
+import { Check, Sparkles, Clock } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { ParallaxFloating } from '@/components/ui/ParallaxFloating'
 
@@ -17,6 +17,7 @@ const pricingPlans = [
             'Support ทาง Email',
         ],
         popular: false,
+        isComingSoon: true,
     },
     {
         id: 'pro',
@@ -32,6 +33,7 @@ const pricingPlans = [
         ],
         popular: true,
         discount: 'ประหยัด 40%',
+        isComingSoon: true,
     },
     {
         id: 'premium',
@@ -48,12 +50,14 @@ const pricingPlans = [
         ],
         popular: false,
         discount: 'ประหยัด 60%',
+        isComingSoon: true,
     },
 ]
 
 export function PricingCards() {
     const handleSelectPlan = (planId: string) => {
-        window.location.href = `/checkout?plan=${planId}`
+        // Coming soon - do nothing
+        // window.location.href = `/checkout?plan=${planId}`
     }
 
     return (
@@ -135,18 +139,28 @@ export function PricingCards() {
                                 </ul>
 
                                 {/* Button */}
-                                <Button
-                                    onClick={() => handleSelectPlan(plan.id)}
-                                    className={`
-                                        w-full font-semibold
-                                        ${plan.popular
-                                            ? 'bg-gradient-to-r from-[rgb(60,100,255)] to-[rgb(200,50,255)] hover:glow-blue text-white'
-                                            : 'glass border border-white/10 hover:border-[rgb(60,100,255)] text-white'
-                                        }
-                                    `}
-                                >
-                                    เลือกแพ็คเกจนี้
-                                </Button>
+                                {plan.isComingSoon ? (
+                                    <Button
+                                        disabled
+                                        className="w-full font-semibold glass border border-white/10 text-gray-400 cursor-not-allowed opacity-60"
+                                    >
+                                        <Clock className="w-4 h-4 mr-2" />
+                                        เร็วๆ นี้
+                                    </Button>
+                                ) : (
+                                    <Button
+                                        onClick={() => handleSelectPlan(plan.id)}
+                                        className={`
+                                            w-full font-semibold
+                                            ${plan.popular
+                                                ? 'bg-gradient-to-r from-[rgb(60,100,255)] to-[rgb(200,50,255)] hover:glow-blue text-white'
+                                                : 'glass border border-white/10 hover:border-[rgb(60,100,255)] text-white'
+                                            }
+                                        `}
+                                    >
+                                        เลือกแพ็คเกจนี้
+                                    </Button>
+                                )}
                             </div>
                         </ParallaxFloating>
                     )

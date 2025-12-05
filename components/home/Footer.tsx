@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Video } from 'lucide-react'
+import Image from 'next/image'
 
 export function Footer() {
     return (
@@ -9,13 +9,19 @@ export function Footer() {
                     {/* Brand */}
                     <div className="col-span-1">
                         <Link href="/" className="flex items-center gap-2 mb-4 group">
-                            <div className="w-10 h-10 bg-gradient-to-br from-[rgb(60,100,255)] to-[rgb(200,50,255)] rounded-xl flex items-center justify-center glow-blue-soft group-hover:glow-blue transition-all">
-                                <Video className="w-6 h-6 text-white" />
+                            <div className="w-10 h-10 rounded-xl overflow-hidden group-hover:scale-110 transition-transform">
+                                <Image
+                                    src="/logo.png"
+                                    alt="Hedcut"
+                                    width={40}
+                                    height={40}
+                                    className="w-full h-full object-cover"
+                                />
                             </div>
-                            <span className="text-xl font-bold text-gradient-electric">AutoCut</span>
+                            <span className="text-xl font-bold text-gradient-electric">Hedcut</span>
                         </Link>
                         <p className="text-sm text-gray-400">
-                            AI ตัดต่อวิดีโอให้คุณอัตโนมัติ
+                            🍄 AI ตัดต่อวิดีโอให้คุณอัตโนมัติ
                         </p>
                     </div>
 
@@ -45,7 +51,7 @@ export function Footer() {
                         <h3 className="text-white font-semibold mb-4">ข้อมูล</h3>
                         <ul className="space-y-2">
                             <li>
-                                <Link href="/jobs" className="text-gray-400 hover:text-[rgb(0,255,180)] transition-colors">
+                                <Link href="/upload" className="text-gray-400 hover:text-[rgb(0,255,180)] transition-colors">
                                     งานของฉัน
                                 </Link>
                             </li>
@@ -55,9 +61,9 @@ export function Footer() {
                                 </a>
                             </li>
                             <li>
-                                <a href="#" className="text-gray-400 hover:text-[rgb(0,255,180)] transition-colors">
+                                <Link href="/contact" className="text-gray-400 hover:text-[rgb(0,255,180)] transition-colors">
                                     ติดต่อ
-                                </a>
+                                </Link>
                             </li>
                         </ul>
                     </div>
@@ -81,7 +87,7 @@ export function Footer() {
 
                 {/* Copyright */}
                 <div className="border-t border-white/10 pt-8 text-center text-sm text-gray-400">
-                    <p>&copy; {new Date().getFullYear()} AutoCut. สงวนลิขสิทธิ์.</p>
+                    <p>&copy; {new Date().getFullYear()} Hedcut 🍄 สงวนลิขสิทธิ์.</p>
                 </div>
             </div>
         </footer>

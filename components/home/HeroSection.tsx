@@ -4,8 +4,11 @@ import Link from 'next/link'
 import { Upload, Play, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { ParallaxFloating } from '@/components/ui/ParallaxFloating'
+import { useLanguage } from '@/lib/i18n/LanguageContext'
 
 export function HeroSection() {
+    const { t } = useLanguage()
+
     return (
         <section className="relative min-h-screen flex justify-center pt-64 pb-20 px-4 bg-mesh overflow-hidden">
             {/* Animated Gradient Orbs - Background (Slow Parallax) */}
@@ -27,17 +30,17 @@ export function HeroSection() {
                     <ParallaxFloating depth={0.8}>
                         <div className="inline-flex items-center gap-2 px-4 py-2 glass rounded-full mb-8 glow-blue-soft">
                             <Sparkles className="w-4 h-4 text-[rgb(0,255,180)]" />
-                            <span className="text-sm font-medium text-gray-200">AI ตัดต่อวิดีโออัตโนมัติ</span>
+                            <span className="text-sm font-medium text-gray-200">🍄 Hedcut - {t('hero.title')}</span>
                         </div>
                     </ParallaxFloating>
 
                     {/* Main Headline */}
                     <ParallaxFloating depth={1}>
                         <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 leading-tight">
-                            AI ตัดต่อวิดีโอให้คุณ
+                            {t('hero.title')}
                             <br />
                             <span className="text-gradient-electric animate-gradient">
-                                อัตโนมัติ
+                                {t('hero.subtitle')}
                             </span>
                         </h1>
                     </ParallaxFloating>
@@ -45,10 +48,7 @@ export function HeroSection() {
                     {/* Subheadline */}
                     <ParallaxFloating depth={1.1}>
                         <p className="text-xl md:text-2xl text-gray-300 mb-4 max-w-2xl mx-auto leading-relaxed">
-                            เหมาะสำหรับ TikTok, Reels, Shorts
-                        </p>
-                        <p className="text-lg text-gray-400 mb-12 max-w-xl mx-auto">
-                            เพียงอัปโหลดวิดีโอ AI จะช่วยตัดต่อ ใส่ซับไตเติ้ล และปรับอัตราส่วนให้คุณอัตโนมัติ
+                            {t('hero.description')}
                         </p>
                     </ParallaxFloating>
 
@@ -62,7 +62,7 @@ export function HeroSection() {
                             >
                                 <Link href="/upload" className="flex items-center gap-2">
                                     <Upload className="w-5 h-5" />
-                                    เริ่มตัดต่อวิดีโอ
+                                    {t('hero.cta')}
                                 </Link>
                             </Button>
                             <Button
@@ -73,7 +73,7 @@ export function HeroSection() {
                             >
                                 <Link href="#how-it-works" className="flex items-center gap-2">
                                     <Play className="w-5 h-5" />
-                                    ดูตัวอย่าง
+                                    {t('hero.ctaSecondary')}
                                 </Link>
                             </Button>
                         </div>

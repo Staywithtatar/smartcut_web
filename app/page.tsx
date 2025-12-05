@@ -4,6 +4,7 @@ import { FeaturesGrid } from '@/components/home/FeaturesGrid'
 import { HowItWorks } from '@/components/home/HowItWorks'
 import { ParallaxShowcase } from '@/components/home/ParallaxShowcase'
 import { Footer } from '@/components/home/Footer'
+import { ActiveJobsPopup } from '@/components/home/ActiveJobsPopup'
 
 export default function HomePage() {
   return (
@@ -14,6 +15,7 @@ export default function HomePage() {
       <FeaturesGrid />
       <HowItWorks />
       <Footer />
+      <ActiveJobsPopup />
     </div>
   )
 }

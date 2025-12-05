@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { Icons } from '@/lib/icons'
@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { VideoPreview } from '@/components/VideoPreview'
+import { useNotification } from '@/lib/hooks/useNotification'
 
 interface Job {
     id: string
@@ -27,6 +28,15 @@ export default function JobProgress({ jobId }: { jobId: string }) {
     const [videoUrl, setVideoUrl] = useState<string | null>(null)
     const supabase = createClient()
     const router = useRouter()
+    const { notify, requestPermission, permission } = useNotification()
+    const hasNotified = useRef(false)
+
+    // Request notification permission on mount
+    useEffect(() => {
+        if (permission === 'default') {
+            requestPermission()
+        }
+    }, [permission, requestPermission])
 
     useEffect(() => {
         fetchJob()
@@ -43,10 +53,26 @@ export default function JobProgress({ jobId }: { jobId: string }) {
                     filter: `id=eq.${jobId}`,
                 },
                 (payload) => {
-                    setJob(payload.new as Job)
-                    // Fetch video URL if completed
-                    if (payload.new.status === 'COMPLETED' && payload.new.output_video_path) {
-                        fetchVideoUrl(payload.new.output_video_path)
+                    const updatedJob = payload.new as Job
+                    setJob(updatedJob)
+
+                    // Send notification when completed (only once)
+                    if (updatedJob.status === 'COMPLETED' && !hasNotified.current) {
+                        hasNotified.current = true
+                        notify('🎉 วิดีโอตัดต่อเสร็จแล้ว!', {
+                            body: `${updatedJob.job_name} พร้อมดาวน์โหลดแล้ว`,
+                            tag: `job-${jobId}`,
+                        })
+                        fetchVideoUrl(updatedJob.output_video_path!)
+                    }
+
+                    // Notify on failure
+                    if (updatedJob.status === 'FAILED' && !hasNotified.current) {
+                        hasNotified.current = true
+                        notify('❌ เกิดข้อผิดพลาด', {
+                            body: updatedJob.error_message || 'ไม่สามารถประมวลผลวิดีโอได้',
+                            tag: `job-${jobId}`,
+                        })
                     }
                 }
             )
@@ -296,10 +322,10 @@ export default function JobProgress({ jobId }: { jobId: string }) {
                                         <div
                                             key={item.step}
                                             className={`flex items-center gap-4 p-4 rounded-xl border transition-all ${isActive
-                                                    ? 'bg-purple-500/10 border-purple-500/30'
-                                                    : isDone
-                                                        ? 'bg-green-500/10 border-green-500/30'
-                                                        : 'bg-slate-800/50 border-slate-700'
+                                                ? 'bg-purple-500/10 border-purple-500/30'
+                                                : isDone
+                                                    ? 'bg-green-500/10 border-green-500/30'
+                                                    : 'bg-slate-800/50 border-slate-700'
                                                 }`}
                                         >
                                             <Icon className={`w-5 h-5 ${isActive ? 'text-purple-300' : isDone ? 'text-green-300' : 'text-slate-500'
