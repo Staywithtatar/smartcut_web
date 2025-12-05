@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
 
         console.log(`🚀 Dispatching to: ${pythonWorkerUrl}/process-async`)
 
-        // Fire and forget - don't await the full response
+        // Fire and forget - API keys are stored in HuggingFace Secrets
         fetch(`${pythonWorkerUrl}/process-async`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -63,9 +63,7 @@ export async function POST(request: NextRequest) {
                 video_url: signedUrlData.signedUrl,
                 output_path: outputPath,
                 user_id: job.user_id,
-                // Pass API keys for Python to use
-                groq_api_key: process.env.GROQ_API_KEY || '',
-                google_api_key: process.env.GOOGLE_AI_API_KEY || '',
+                // API keys are now stored in HuggingFace Secrets (not sent here)
             }),
         }).catch(err => {
             console.error('Python dispatch error:', err)
