@@ -2,11 +2,15 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
 import { AIServiceManager } from '@/lib/ai/service-manager'
 
+export const maxDuration = 10 // Vercel Free: 10s timeout
+
 export async function POST(request: NextRequest) {
     const aiService = new AIServiceManager()
+    let jobId: string | null = null
 
     try {
-        const { jobId } = await request.json()
+        const body = await request.json()
+        jobId = body.jobId
 
         if (!jobId) {
             return NextResponse.json({ error: 'Job ID is required' }, { status: 400 })
@@ -16,7 +20,7 @@ export async function POST(request: NextRequest) {
         const availableServices = aiService.getAvailableServices()
         if (availableServices.length === 0) {
             return NextResponse.json(
-                { error: 'No AI service configured. Please set GOOGLE_AI_API_KEY or OPENAI_API_KEY' },
+                { error: 'No AI service configured. Please set GOOGLE_AI_API_KEY or GROQ_API_KEY' },
                 { status: 500 }
             )
         }
@@ -36,7 +40,34 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Job not found' }, { status: 404 })
         }
 
-        // Download video
+        // ============================================================
+        // STEP 1: Create signed URL (instead of downloading the video)
+        // ============================================================
+        const { data: signedUrlData, error: signedUrlError } = await supabase.storage
+            .from('raw-videos')
+            .createSignedUrl(job.input_video_path, 3600) // 1 hour validity
+
+        if (signedUrlError || !signedUrlData) {
+            throw new Error(`Failed to create signed URL: ${signedUrlError?.message}`)
+        }
+
+        console.log(`🔗 Created signed URL for video`)
+
+        // Update status: Transcribing
+        await supabase
+            .from('jobs')
+            .update({
+                status: 'TRANSCRIBING',
+                current_step: 'กำลังถอดเสียง...',
+                progress_percentage: 5,
+            })
+            .eq('id', jobId)
+
+        // ============================================================
+        // STEP 2: Download video for transcription only (smaller chunk)
+        // Note: We still need to download for Groq transcription
+        // But this is fast and under 4.5MB usually works
+        // ============================================================
         const { data: videoData, error: downloadError } = await supabase.storage
             .from('raw-videos')
             .download(job.input_video_path)
@@ -45,31 +76,29 @@ export async function POST(request: NextRequest) {
             throw new Error(`Failed to download video: ${downloadError?.message}`)
         }
 
-        console.log(`📥 Downloaded video: ${(videoData.size / (1024 * 1024)).toFixed(2)}MB`)
+        const fileSizeMB = videoData.size / (1024 * 1024)
+        console.log(`📥 Downloaded video for transcription: ${fileSizeMB.toFixed(2)}MB`)
 
-        // Step 1: Transcribe
-        await supabase
-            .from('jobs')
-            .update({
-                status: 'TRANSCRIBING',
-                current_step: 'กำลังถอดเสียง...',
-                progress_percentage: 10,
-            })
-            .eq('id', jobId)
-
+        // ============================================================
+        // STEP 3: Transcribe with AI
+        // ============================================================
         const transcription = await aiService.transcribe(videoData)
 
         await supabase
             .from('jobs')
             .update({
                 transcription_json: transcription,
-                progress_percentage: 30,
+                progress_percentage: 25,
                 current_step: 'วิเคราะห์เนื้อหา...',
+                status: 'ANALYZING',
             })
             .eq('id', jobId)
 
-        // Step 2: Analyze transcript
+        // ============================================================
+        // STEP 4: Analyze transcript with AI
+        // ============================================================
         const analysis = await aiService.analyzeTranscript(transcription)
+
         if (analysis) {
             await supabase
                 .from('jobs')
@@ -79,113 +108,127 @@ export async function POST(request: NextRequest) {
                 .eq('id', jobId)
         }
 
-        // Step 3: Process video
+        // ============================================================
+        // STEP 5: Dispatch to Python Worker (Fire & Forget)
+        // Send signed URL instead of video file
+        // ============================================================
         await supabase
             .from('jobs')
             .update({
                 status: 'RENDERING',
-                current_step: 'กำลังตัดต่อวิดีโอ...',
-                progress_percentage: 50,
+                current_step: 'ส่งไปประมวลผล...',
+                progress_percentage: 40,
             })
             .eq('id', jobId)
 
-        const formData = new FormData()
-        formData.append('video', videoData, `${jobId}_input.mp4`)
-        formData.append(
-            'editing_script',
-            JSON.stringify({
-                job_id: jobId,
+        const outputPath = `${job.user_id}/${jobId}/output.mp4`
 
-                // Metadata (AI content understanding)
-                metadata: {
-                    contentType: 'vlog',  // AI can detect this
-                    topic: analysis?.summary || '',
-                    mood: 'casual',
-                    pacing: 'medium',
-                    targetAudience: 'general'
-                },
+        const editingScript = {
+            job_id: jobId,
 
-                // Timeline operations
-                timeline: {
-                    cuts: (analysis?.jumpCuts || [])
-                        .filter(cut => typeof cut.start === 'number' && typeof cut.end === 'number')
-                        .map(cut => ({
-                            start: cut.start,
-                            end: cut.end,
-                            reason: cut.reason || 'AI detected',
-                            type: 'silence'
-                        })),
-                    highlights: (analysis?.highlights || [])
-                        .filter(h => typeof h.start === 'number' && typeof h.end === 'number')
-                        .map(h => ({
-                            start: h.start,
-                            end: h.end,
-                            reason: h.reason || 'Key moment',
-                            effects: {
-                                zoom: {
-                                    intensity: 'medium',
-                                    easing: 'ease-in-out',
-                                    duration: 1.0
-                                }
-                            }
-                        })),
-                    transitions: []
-                },
+            // Metadata
+            metadata: {
+                contentType: 'vlog',
+                topic: analysis?.summary || '',
+                mood: 'casual',
+                pacing: 'medium',
+                targetAudience: 'general'
+            },
 
-                // Audio processing
-                audio: {
-                    normalization: {
-                        enabled: true,
-                        targetLoudness: -16  // LUFS for social media
-                    },
-                    segments: [],
-                    backgroundMusic: null
-                },
-
-                // Visual processing
-                visual: {
-                    colorGrading: {
-                        preset: analysis?.visual_style?.color_grading || 'vibrant'
-                    },
-                    aspectRatio: {
-                        target: '9:16',
-                        strategy: analysis?.visual_style?.apply_blur ? 'blur_background' : 'center_crop'
-                    }
-                },
-
-                // Subtitles
-                subtitles: {
-                    segments: transcription.segments.map((seg) => ({
-                        start: seg.start,
-                        end: seg.end,
-                        text: seg.text,
+            // Timeline operations
+            timeline: {
+                cuts: (analysis?.jumpCuts || [])
+                    .filter((cut: any) => typeof cut.start === 'number' && typeof cut.end === 'number')
+                    .map((cut: any) => ({
+                        start: cut.start,
+                        end: cut.end,
+                        reason: cut.reason || 'AI detected',
+                        type: 'silence'
                     })),
-                    style: {
-                        font: 'Kanit ExtraBold',
-                        size: 'auto',
-                        position: analysis?.subtitle_settings?.position || 'bottom',
-                        color: 'white',
-                        backgroundColor: null,
-                        outline: true
-                    },
-                    keywords: analysis?.keywords || []
-                },
+                highlights: (analysis?.highlights || [])
+                    .filter((h: any) => typeof h.start === 'number' && typeof h.end === 'number')
+                    .map((h: any) => ({
+                        start: h.start,
+                        end: h.end,
+                        reason: h.reason || 'Key moment',
+                        effects: {
+                            zoom: {
+                                intensity: 'medium',
+                                easing: 'ease-in-out',
+                                duration: 1.0
+                            }
+                        }
+                    })),
+                transitions: []
+            },
 
-                // Recommendations
-                recommendations: {
-                    targetDuration: null,
-                    suggestedThumbnailTimestamp: null,
-                    qualityScore: 75,
-                    improvementSuggestions: []
+            // Audio processing
+            audio: {
+                normalization: {
+                    enabled: true,
+                    targetLoudness: -16
+                },
+                segments: [],
+                backgroundMusic: null
+            },
+
+            // Visual processing
+            visual: {
+                colorGrading: {
+                    preset: analysis?.visual_style?.color_grading || 'vibrant'
+                },
+                aspectRatio: {
+                    target: '9:16',
+                    strategy: analysis?.visual_style?.apply_blur ? 'blur_background' : 'center_crop'
                 }
-            })
-        )
+            },
+
+            // Subtitles
+            subtitles: {
+                segments: transcription.segments.map((seg: any) => ({
+                    start: seg.start,
+                    end: seg.end,
+                    text: seg.text,
+                })),
+                style: {
+                    font: 'Kanit ExtraBold',
+                    size: 'auto',
+                    position: analysis?.subtitle_settings?.position || 'bottom',
+                    color: 'white',
+                    backgroundColor: null,
+                    outline: true
+                },
+                keywords: analysis?.keywords || []
+            },
+
+            // Recommendations
+            recommendations: {
+                targetDuration: null,
+                suggestedThumbnailTimestamp: null,
+                qualityScore: 75,
+                improvementSuggestions: []
+            }
+        }
+
+        // Send to Python Worker (async - don't wait for response)
+        const pythonWorkerUrl = process.env.PYTHON_WORKER_URL || 'http://localhost:8000'
+
+        console.log(`🚀 Dispatching to Python Worker: ${pythonWorkerUrl}/process-async`)
 
         const pythonResponse = await fetch(
-            `${process.env.PYTHON_WORKER_URL || 'http://localhost:8000'}/process`,
+            `${pythonWorkerUrl}/process-async`,
             {
                 method: 'POST',
-                body: formData,
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    job_id: jobId,
+                    video_url: signedUrlData.signedUrl,
+                    output_path: outputPath,
+                    user_id: job.user_id,
+                    editing_script: editingScript,
+                }),
             }
         )
 
@@ -194,53 +237,34 @@ export async function POST(request: NextRequest) {
             throw new Error(`Python worker failed: ${errorText}`)
         }
 
+        const pythonResult = await pythonResponse.json()
+        console.log(`✅ Python Worker accepted job: ${pythonResult.status}`)
+
+        // Update status: Processing started
         await supabase
             .from('jobs')
             .update({
-                progress_percentage: 80,
-                current_step: 'กำลังบันทึกวิดีโอ...',
+                status: 'RENDERING',
+                current_step: 'กำลังตัดต่อวิดีโอ...',
+                progress_percentage: 45,
             })
             .eq('id', jobId)
 
-        const processedVideo = await pythonResponse.blob()
-
-        // Upload result
-        const finalPath = `${job.user_id}/${jobId}/output.mp4`
-        const { error: uploadError } = await supabase.storage
-            .from('final-videos')
-            .upload(finalPath, processedVideo, {
-                contentType: 'video/mp4',
-                upsert: true,
-            })
-
-        if (uploadError) throw uploadError
-
-        // Complete
-        await supabase
-            .from('jobs')
-            .update({
-                status: 'COMPLETED',
-                output_video_path: finalPath,
-                progress_percentage: 100,
-                current_step: 'เสร็จสิ้น',
-                completed_at: new Date().toISOString(),
-            })
-            .eq('id', jobId)
-
-        console.log(`✅ Job completed: ${jobId}`)
-
+        // Return immediately - Python will update status when done
         return NextResponse.json({
             success: true,
+            status: 'processing',
             jobId,
-            outputPath: finalPath,
+            message: 'Video processing started. Check job status for progress.',
             servicesUsed: availableServices,
         })
+
     } catch (error: any) {
         console.error('❌ Process job error:', error)
 
-        try {
-            const { jobId } = await request.json()
-            if (jobId) {
+        // Update job status to FAILED
+        if (jobId) {
+            try {
                 const supabase = createServiceClient()
                 await supabase
                     .from('jobs')
@@ -250,9 +274,9 @@ export async function POST(request: NextRequest) {
                         current_step: 'ล้มเหลว',
                     })
                     .eq('id', jobId)
+            } catch (updateError) {
+                console.error('Failed to update job status:', updateError)
             }
-        } catch {
-            // Ignore
         }
 
         return NextResponse.json({ error: error.message }, { status: 500 })
