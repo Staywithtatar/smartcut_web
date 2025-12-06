@@ -15,11 +15,53 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Hedcut - AI ตัดต่อวิดีโอให้คุณอัตโนมัติ 🍄",
-  description: "เห็ดคัต - AI ตัดต่อวิดีโอให้คุณอัตโนมัติ เหมาะสำหรับ TikTok, Reels, Shorts",
+  metadataBase: new URL('https://www.hedcut.online'),
+  title: {
+    default: "Hedcut - AI ตัดต่อวิดีโอให้คุณอัตโนมัติ 🍄",
+    template: "%s | Hedcut"
+  },
+  description: "เห็ดคัต (Hedcut) - AI ตัดต่อวิดีโอให้คุณอัตโนมัติ เหมาะสำหรับ TikTok, Reels, Shorts ช่วยตัดความเงียบ ใส่ซับไตเติ้ล และเลือกช็อตเด็ดให้ทันที",
+  keywords: ["AI ตัดต่อวิดีโอ", "ตัดต่ออัตโนมัติ", "AutoCut", "Hedcut", "TikTok", "Reels", "Shorts", "ตัดต่อคลิปสั้น", "ใส่ซับอัตโนมัติ"],
+  authors: [{ name: "Hedcut Team" }],
+  creator: "Hedcut Team",
+  publisher: "Hedcut",
   icons: {
     icon: '/logo.png',
     apple: '/logo.png',
+  },
+  openGraph: {
+    type: 'website',
+    locale: 'th_TH',
+    url: 'https://www.hedcut.online',
+    title: "Hedcut - AI ตัดต่อวิดีโอให้คุณอัตโนมัติ 🍄",
+    description: "เห็ดคัต - AI ตัดต่อวิดีโอให้คุณอัตโนมัติ เหมาะสำหรับ TikTok, Reels, Shorts",
+    siteName: 'Hedcut',
+    images: [
+      {
+        url: '/og-image.jpg', // We might need to create this later or use logo for now
+        width: 1200,
+        height: 630,
+        alt: 'Hedcut AI Video Editor',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: "Hedcut - AI ตัดต่อวิดีโอให้คุณอัตโนมัติ 🍄",
+    description: "เห็ดคัต - AI ตัดต่อวิดีโอให้คุณอัตโนมัติ เหมาะสำหรับ TikTok, Reels, Shorts",
+    images: ['/og-image.jpg'],
+    creator: '@hedcut',
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
   },
 };
 
