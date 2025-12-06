@@ -188,7 +188,7 @@ export function ActiveJobsPopup() {
                 {/* Footer */}
                 <div className="px-4 py-2 bg-white/5 border-t border-white/5">
                     <Link
-                        href="/upload"
+                        href="/jobs"
                         className="text-xs text-purple-300 hover:text-purple-200 transition-colors"
                     >
                         ดูงานทั้งหมด →
