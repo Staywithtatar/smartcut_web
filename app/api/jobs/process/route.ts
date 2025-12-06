@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
                 video_url: signedUrlData.signedUrl,
                 output_path: outputPath,
                 user_id: job.user_id,
-                // API keys are now stored in HuggingFace Secrets (not sent here)
+                options: job.options || {}, // Send user preferences
             }),
         }).catch(err => {
             console.error('Python dispatch error:', err)
